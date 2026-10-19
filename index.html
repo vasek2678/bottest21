@@ -13,7 +13,7 @@
             --accent: var(--tg-theme-button-color, #0a84ff);
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, sans-serif; }
-        body { background-color: var(--bg); color: var(--text); padding: 15px; padding-bottom: 80px; }
+        body { background-color: var(--bg); color: var(--text); padding: 15px; padding-bottom: 90px; }
         
         .header { text-align: center; margin-bottom: 20px; font-weight: bold; font-size: 20px; }
         
@@ -31,8 +31,22 @@
         
         input, select, textarea { width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 1px solid #444; border-radius: 8px; margin-bottom: 10px; font-size: 14px; }
         
-        /* Спец. блоки, скрытые по умолчанию */
         .mode-block { display: none; }
+
+        /* Новая панель синхронизации внизу */
+        .sticky-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: var(--card-bg);
+            padding: 15px;
+            border-top: 1px solid #333;
+            display: none;
+            z-index: 100;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
+        }
+        .sticky-footer button { margin-bottom: 0; background: #34c759; }
     </style>
 </head>
 <body>
@@ -52,127 +66,154 @@
     <!-- ЭКРАН 2: РАБОЧАЯ ПАНЕЛЬ -->
     <div id="screen-dashboard">
         
-        <!-- БЛОК: РАСПИСАНИЕ (Только для Школы и Универа) -->
         <div class="card mode-block mode-school mode-uni">
             <h3>📅 Мое расписание</h3>
-            <select id="schDay">
-                <option value="1">Понедельник</option>
-                <option value="2">Вторник</option>
-                <option value="3">Среда</option>
-                <option value="4">Четверг</option>
-                <option value="5">Пятница</option>
-                <option value="6">Суббота</option>
-            </select>
+            <select id="schDay"><option value="Пн">Понедельник</option><option value="Вт">Вторник</option><option value="Ср">Среда</option><option value="Чт">Четверг</option><option value="Пт">Пятница</option><option value="Сб">Суббота</option></select>
             <textarea id="lessons" placeholder="Список предметов (с новой строки)"></textarea>
             <input type="text" id="extra" placeholder="Доп. занятия (например: Репетитор 18:00)">
-            <button onclick="sendData('save_schedule')">💾 Сохранить расписание</button>
+            <button onclick="queueData('save_schedule', this)">💾 Сохранить расписание</button>
         </div>
 
-        <!-- БЛОК: СЕССИЯ И ЗАЧЕТЫ (Только для Универа) -->
         <div class="card mode-block mode-uni" style="border: 1px solid #ff9500;">
             <h3 style="color: #ff9500;">🔥 Зачеты и Сессия</h3>
             <input type="date" id="examDate">
             <input type="text" id="examName" placeholder="Предмет (например, Вышмат)">
             <textarea id="examTopics" placeholder="Темы для подготовки..."></textarea>
-            <button style="background: #ff9500;" onclick="sendData('add_exam')">🔔 Поставить напоминание о зачете</button>
+            <button style="background: #ff9500;" onclick="queueData('add_exam', this)">🔔 Поставить напоминание о зачете</button>
         </div>
 
-        <!-- БЛОК: ОЦЕНКИ (Только для Школы и Универа) -->
         <div class="card mode-block mode-school mode-uni">
             <h3>📊 Дневник и Оценки</h3>
             <div style="display: flex; gap: 10px;">
                 <input type="text" id="grSubj" placeholder="Предмет" style="width: 70%;">
                 <input type="number" id="grMark" placeholder="Оценка" style="width: 30%;">
             </div>
-            <button onclick="sendData('add_grade')">📈 Записать оценку</button>
-            <button style="background: #34c759;" onclick="sendData('view_grades')">👀 Посмотреть средний балл</button>
+            <button onclick="queueData('add_grade', this)">📈 Записать оценку</button>
+            <!-- Эта кнопка отправляет сразу, так как юзер хочет увидеть ответ -->
+            <button style="background: #8e8e93;" onclick="queueData('view_grades', this)">👀 Посмотреть средний балл</button>
         </div>
 
-        <!-- БЛОК: ДЛЯ СЕБЯ (Напоминания) -->
         <div class="card mode-block mode-personal">
             <h3>📝 Мои задачи и Напоминания</h3>
             <div style="display: flex; gap: 10px;">
                 <input type="time" id="remTime" style="width: 40%;">
                 <input type="text" id="remText" placeholder="Текст задачи" style="width: 60%;">
             </div>
-            <button onclick="sendData('add_reminder')">🔔 Добавить задачу</button>
+            <button onclick="queueData('add_reminder', this)">🔔 Добавить задачу</button>
         </div>
 
-        <!-- БЛОК: ОБЩИЕ НАСТРОЙКИ (Для всех) -->
         <div class="card">
             <h3>⚙️ Настройки Планера</h3>
             <label style="font-size: 12px; color: #888;">Время ежедневных уведомлений:</label>
             <input type="time" id="notifTime" value="07:00">
             <label style="font-size: 12px; color: #888;">Начало каникул/отпуска (не будить):</label>
             <input type="date" id="vacationDate">
-            <button style="background: #5ac8fa; color: #000;" onclick="sendData('save_settings')">⚙️ Сохранить настройки</button>
+            <button style="background: #5ac8fa; color: #000;" onclick="queueData('save_settings', this)">⚙️ Сохранить настройки</button>
             
             <hr style="border: 0; border-top: 1px solid #333; margin: 15px 0;">
-            <button class="btn-danger" onclick="resetMode()">🔄 Сменить направление (Школа/Универ)</button>
+            <button class="btn-danger" onclick="resetMode()">🔄 Сменить направление (Сброс)</button>
         </div>
+    </div>
+
+    <!-- ЗАКРЕПЛЕННАЯ ПАНЕЛЬ СИНХРОНИЗАЦИИ -->
+    <div class="sticky-footer" id="stickyFooter">
+        <button id="syncBtn" onclick="syncAndClose()">💾 Отправить в бота (0)</button>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        // Проверяем, выбрал ли уже юзер режим
+        let pendingData = []; // Корзина действий
+
         let currentMode = localStorage.getItem('planer_mode');
-        
         if (currentMode) {
             showDashboard(currentMode);
         }
 
         function setMode(mode) {
             localStorage.setItem('planer_mode', mode);
-            // Отправляем в бота инфу о выборе направления
-            tg.sendData(JSON.stringify({ action: 'set_mode', mode: mode }));
-            showDashboard(mode);
+            
+            // Если юзер меняет профиль, отправляем это сразу
+            tg.sendData(JSON.stringify({ action: "batch", mode: mode, items: [{ action: "set_mode" }] }));
+            tg.close();
         }
 
         function showDashboard(mode) {
             document.getElementById('screen-onboarding').style.display = 'none';
             document.getElementById('screen-dashboard').style.display = 'block';
+            document.getElementById('stickyFooter').style.display = 'block';
             
-            // Скрываем все блоки
             document.querySelectorAll('.mode-block').forEach(el => el.style.display = 'none');
-            
-            // Показываем нужные блоки в зависимости от выбора
             document.querySelectorAll('.mode-' + mode).forEach(el => el.style.display = 'block');
         }
 
         function resetMode() {
             localStorage.removeItem('planer_mode');
             document.getElementById('screen-dashboard').style.display = 'none';
+            document.getElementById('stickyFooter').style.display = 'none';
             document.getElementById('screen-onboarding').style.display = 'block';
         }
 
-        function sendData(action) {
+        // Накопление данных без закрытия окна
+        function queueData(action, btn) {
             if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
             
-            let data = { action: action, mode: localStorage.getItem('planer_mode') };
+            let item = { action: action };
             
-            // Собираем данные в зависимости от нажатой кнопки
             if (action === 'save_schedule') {
-                data.day = document.getElementById('schDay').value;
-                data.lessons = document.getElementById('lessons').value;
-                data.extra = document.getElementById('extra').value;
+                item.day = document.getElementById('schDay').value;
+                item.lessons = document.getElementById('lessons').value;
+                item.extra = document.getElementById('extra').value;
             } else if (action === 'add_grade') {
-                data.subj = document.getElementById('grSubj').value;
-                data.mark = document.getElementById('grMark').value;
+                item.subj = document.getElementById('grSubj').value;
+                item.mark = document.getElementById('grMark').value;
             } else if (action === 'add_exam') {
-                data.date = document.getElementById('examDate').value;
-                data.name = document.getElementById('examName').value;
-                data.topics = document.getElementById('examTopics').value;
+                item.date = document.getElementById('examDate').value;
+                item.name = document.getElementById('examName').value;
+                item.topics = document.getElementById('examTopics').value;
             } else if (action === 'add_reminder') {
-                data.time = document.getElementById('remTime').value;
-                data.text = document.getElementById('remText').value;
+                item.time = document.getElementById('remTime').value;
+                item.text = document.getElementById('remText').value;
             } else if (action === 'save_settings') {
-                data.notifTime = document.getElementById('notifTime').value;
-                data.vacation = document.getElementById('vacationDate').value;
+                item.notifTime = document.getElementById('notifTime').value;
+                item.vacation = document.getElementById('vacationDate').value;
             }
 
-            tg.sendData(JSON.stringify(data));
+            pendingData.push(item);
+
+            // Визуальный отклик кнопки (зеленая галочка на 1.5 сек)
+            let originalText = btn.innerText;
+            let originalBg = btn.style.background;
+            
+            btn.innerText = "✅ Сохранено";
+            btn.style.background = "#34c759";
+            
+            setTimeout(() => { 
+                btn.innerText = originalText; 
+                btn.style.background = originalBg || "var(--accent)"; 
+            }, 1500);
+
+            // Обновляем счетчик на главной кнопке выгрузки
+            document.getElementById('syncBtn').innerText = `💾 Отправить в бота (${pendingData.length})`;
+        }
+
+        // Финальная отправка всех данных пакетом
+        function syncAndClose() {
+            if (pendingData.length === 0) {
+                tg.close(); // Если ничего не нажимали, просто закрываем
+                return;
+            }
+            
+            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+            
+            let payload = {
+                action: "batch",
+                mode: localStorage.getItem('planer_mode'),
+                items: pendingData
+            };
+            
+            tg.sendData(JSON.stringify(payload));
             setTimeout(() => tg.close(), 100);
         }
     </script>
